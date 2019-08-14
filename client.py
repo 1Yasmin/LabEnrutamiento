@@ -11,6 +11,9 @@ import time
 #ssl
 #import ssl
 
+received_from = []
+jumps = 0
+
 if sys.version_info < (3, 0):
         reload(sys)
         sys.setdefaultencoding('utf8')
@@ -53,9 +56,6 @@ class ChatBot(sleekxmpp.ClientXMPP):
             logging.error("No response from server.")
             self.disconnect()
 
-    def remove_item(self):
-        #remove user
-        self.del_roster_item(self.jid)
 
     def message(self, msg):
         if msg['type'] in ('chat', 'normal'):
@@ -148,6 +148,33 @@ if __name__ == '__main__':
                 #send a message
                     if(ch==str(1)):
                         print("Flooding")
+                        print("write your neighbors and distance separated by a space")
+                        print("example: node@alumchat.xyz 10 quack@alumchat.xyz 8")
+                        neigh = raw_input("my neighbors are: ")
+                        try:
+                            neighbors = neigh.split()
+                        except:
+                            print("error defining neighbors")
+                        print("neighbors: {}".format(neighbors))
+                        print("who is the message for?")
+                        user_to_send = raw_input(">: ")
+                        print("what is your message?")
+                        msg_to_send = raw_input(">: ")
+                        #compose message according to the requirements
+                        start_of_message = str(xmpp.jid) + " " + user_to_send + " " + str(jumps)
+                        #send msg to neighbors
+                        #in this case destination can be found in neighbors and does not need to be send to every single neighbor
+                        if user_to_send in neighbors:
+                            #obtain index of element
+                            distance_index = neighbors.index(user_to_send) + 1
+                            dest_distance = neighbors[distance_index]
+                            compound_msg = start_of_message + " " + dest_distance + " " + "nodes: " + " ".join(received_from) + " " + msg_to_send
+                            print(compound_msg)
+                        else:
+                            for i in range(len(neighbors)):
+                                print("howdy")
+                            
+                            
                                 #print("who is the message for?")
                                 #user_to_send = raw_input(">: ")
                                 #print("what is your message?")
