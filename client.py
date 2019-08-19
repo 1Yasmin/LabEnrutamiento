@@ -2,7 +2,7 @@ import sys
 import logging
 import getpass
 from optparse import OptionParser
-
+from linkstaterouting import call_linkstaterouting
 import sleekxmpp
 from sleekxmpp.exceptions import IqError, IqTimeout
 
@@ -185,6 +185,7 @@ if __name__ == '__main__':
                         print("Distance vector routing")
                     elif(ch==str(3)):
                         print("Link state routing")
+                        call_linkstaterouting()
                         
                                 
         else:

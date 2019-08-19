@@ -1,6 +1,65 @@
 import csv
 import sys
 import os
+import time
+from threading import Thread
+import datetime
+from copy import deepcopy
+from diccionario import priorityDictionary
+
+re_check_off_time = 1
+off_time = 3
+re_check_send_time = 1
+broadcast_delay = 1
+off_time_broadcast = 3
+data = []
+xmluser_name = "dia151378@alumchat.xyz"
+seq_number = 0
+seq_number_i = 0
+no_of_neighbours = 0
+graph = {}
+graph_time_update = {}
+broad_cast_msg = ""
+check_last_time = {}
+
+
+def connection_state_changed():
+	global seq_number, broad_cast_msg
+	temp = {}
+	temp['data'] = [value for value in data if value[3] == True]
+	temp['seq'] = seq_number
+	temp['time'] = datetime.datetime.now()
+	broad_cast_msg = "2?"+ xmluser_name + "?"+str(temp)
+	seq_number = seq_number +1
+	graph[xmluser_name] = temp
+
+def Dijkstra(G,start,end=None):
+	D = {}	#distancia final
+	P = {}	# predecedores
+	Q = priorityDictionary()   
+	Q[start] = 0
+	for v in Q:
+		D[v] = Q[v]
+		if v == end: break
+		for w in G[v]:
+			vwLength = D[v] + G[v][w]
+			if w in D:
+				if vwLength < D[w]:
+					pass
+			elif w not in Q or vwLength < Q[w]:
+				Q[w] = vwLength
+				P[w] = v
+	return (D,P)
+
+def shortestPath(G,start,end):
+	D,P = Dijkstra(G,start,end)
+	Path = []
+	while 1:
+		Path.append(end)
+		if end == start: break
+		end = P[end]
+	Path.reverse()
+	return Path
 #linkstaterouting
 send_matrix = []
 matrix_set = 0
@@ -27,7 +86,7 @@ def set_distances(send_matrix):
                 tempdict[j+1] = send_matrix[i][j]
         distances[i+1] = tempdict
         nodes.append(i+1)
-def dijkstra(start):
+def dijkstra2(start):
 
     global distances
     global nodes
@@ -92,3 +151,27 @@ def shortest_path(start, end):
         dest = previous[dest]
 
     path.reverse()
+
+def call_linkstaterouting():
+    sendmessagetoss = input("Escribe la persona a la que deseas enviar un mensaje: ")
+    while True:
+        try:
+            localgraph = deepcopy(graph)
+            G = {}
+            for x in graph:
+                G[x] = {}
+                for y in localgraph[x]["data"]:
+                    G[x][y[0]] = float(y[1])
+                    for x in graph:
+                        if x != xmluser_name:
+                            path = shortestPath(G, xmluser_name, x)
+                            cost = 0
+                            for x in range(0, len(path)-1):
+                                cost += G[path[x]][path[x+1]]
+                                print(path[x], end="")
+                                print(path[len(path)-1],end="")
+                                print("%.1f" % cost)
+        except Exception as e:
+            print(e)
+            pass
+            time.sleep(2)
