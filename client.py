@@ -11,7 +11,7 @@ import time
 #ssl
 #import ssl
 
-received_from = []
+
 jumps = 0
 
 if sys.version_info < (3, 0):
@@ -25,7 +25,12 @@ class ChatBot(sleekxmpp.ClientXMPP):
         sleekxmpp.ClientXMPP.__init__(self, jid, password)
         #recipient
         #self.recipient = recipient
+        #recibiods
+        self.received_from = []
+        #neighbors
+        self.neighbors = []
         #message
+        self.compound_msg = ""
         self.add_event_handler("message", self.message, threaded=True)
         #start
         self.add_event_handler("session_start", self.start, threaded=True)
@@ -60,6 +65,26 @@ class ChatBot(sleekxmpp.ClientXMPP):
     def message(self, msg):
         if msg['type'] in ('chat', 'normal'):
             print ("%(body)s" % msg)
+            #add to received from
+            partir_mensaje = msg.split()
+            usuario_que_envio = partir_mensaje[0]
+            xmpp.received_from.append(usuario_que_envio)
+            #who is the message for?
+            am_i_final = partir_mensaje[1]
+            if am_i_final == xmpp.jid:
+                print("Flood has finished")
+            elif user_to_send in xmpp.neighbors:
+                # obtain index of element
+                distance_index = xmpp.neighbors.index(user_to_send) + 1
+                dest_distance = xmpp.neighbors[distance_index]
+                xmpp.compound_msg = start_of_message + " " + dest_distance + " " + "nodes: " + " ".join(
+                    xmpp.received_from) + " " + msg_to_send
+                print(compound_msg)
+            else:
+                for i in range(len(xmpp.neighbors)):
+                    if (i % 2 == 0 and xmpp.neighbors[i] not in xmpp.received_from):
+                        xmpp.send_message(mto=xmpp.neighbors[i], mbody=xmpp.compound_msg, mtype='chat')
+
 
 if __name__ == '__main__':
         optp = OptionParser()
@@ -142,7 +167,7 @@ if __name__ == '__main__':
                 time.sleep(5)
                 while True:
                     print("press 1 to use Flooding")
-                    print("press 2 to use Distance vector routing")
+                    print("press 2 to use fast message to esam")
                     print("press 3 to use Link state routing")
                     ch = raw_input(">: ")
                 #send a message
@@ -168,11 +193,13 @@ if __name__ == '__main__':
                             #obtain index of element
                             distance_index = neighbors.index(user_to_send) + 1
                             dest_distance = neighbors[distance_index]
-                            compound_msg = start_of_message + " " + dest_distance + " " + "nodes: " + " ".join(received_from) + " " + msg_to_send
+                            compound_msg = start_of_message + " " + dest_distance + " " + "nodes: " + " ".join(xmpp.received_from) + " " + msg_to_send
                             print(compound_msg)
                         else:
-                            for i in range(len(neighbors)):
-                                print("howdy")
+                            for i in range(len(xmpp.neighbors)):
+                                if(i % 2 == 0 and xmpp.neighbors[i] not in xmpp.received_from):
+                                    print("sending to: {}".format(xmpp.neighbors))
+                                    xmpp.send_message(mto=xmpp.neighbors[i], mbody=xmpp.compound_msg, mtype='chat')
                             
                             
                                 #print("who is the message for?")
@@ -182,7 +209,7 @@ if __name__ == '__main__':
                                 #print("sending msg")
                                 #xmpp.send_message(mto=user_to_send, mbody = msg_to_send, mtype = 'chat')
                     elif(ch==str(2)):
-                        print("Distance vector routing")
+                        xmpp.send_message(mto="megaman@alumchat.xyz", mbody="pika pika", mtype='chat')
                     elif(ch==str(3)):
                         print("Link state routing")
                         call_linkstaterouting()
