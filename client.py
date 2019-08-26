@@ -64,6 +64,8 @@ class ChatBot(sleekxmpp.ClientXMPP):
 
     def message(self, msg):
         if msg['type'] in ('chat', 'normal'):
+            #create empty user to send cause we receive a message at the beginning
+            user_to_send = " "
             print ("%(body)s" % msg)
             #add to received from
             
@@ -74,13 +76,15 @@ class ChatBot(sleekxmpp.ClientXMPP):
             am_i_final = partir_mensaje[1]
             if am_i_final == xmpp.jid:
                 print("Flood has finished")
-            elif user_to_send in xmpp.neighbors:
+            elif am_i_final in xmpp.neighbors:
                 # obtain index of element
-                distance_index = xmpp.neighbors.index(user_to_send) + 1
-                dest_distance = xmpp.neighbors[distance_index]
-                xmpp.compound_msg = start_of_message + " " + dest_distance + " " + "nodes: " + " ".join(
-                    xmpp.received_from) + " " + msg_to_send
-                print(compound_msg)
+                #distance_index = xmpp.neighbors.index(user_to_send) + 1
+                #dest_distance = xmpp.neighbors[distance_index]
+                #xmpp.compound_msg = start_of_message + " " + dest_distance + " " + "nodes: " + " ".join(
+                    #xmpp.received_from) + " " + msg_to_send
+                #print(xmpp.compound_msg)
+                xmpp.compound_msg = str(xmpp.jid) + " " + am_i_final + " " + partir_mensaje[-1]
+                xmpp.send_message(mto=am_i_final, mbody=xmpp.compound_msg, mtype='chat')
             else:
                 for i in range(len(xmpp.neighbors)):
                     if (i % 2 == 0 and xmpp.neighbors[i] not in xmpp.received_from):
@@ -178,10 +182,10 @@ if __name__ == '__main__':
                         print("example: node@alumchat.xyz 10 quack@alumchat.xyz 8")
                         neigh = raw_input("my neighbors are: ")
                         try:
-                            neighbors = neigh.split()
+                            xmpp.neighbors = neigh.split()
                         except:
                             print("error defining neighbors")
-                        print("neighbors: {}".format(neighbors))
+                        print("neighbors: {}".format(xmpp.neighbors))
                         print("who is the message for?")
                         user_to_send = raw_input(">: ")
                         print("what is your message?")
@@ -190,17 +194,24 @@ if __name__ == '__main__':
                         start_of_message = str(xmpp.jid) + " " + user_to_send + " " + str(jumps)
                         #send msg to neighbors
                         #in this case destination can be found in neighbors and does not need to be send to every single neighbor
-                        if user_to_send in neighbors:
+                        if user_to_send in xmpp.neighbors:
                             #obtain index of element
-                            distance_index = neighbors.index(user_to_send) + 1
-                            dest_distance = neighbors[distance_index]
-                            compound_msg = start_of_message + " " + dest_distance + " " + "nodes: " + " ".join(xmpp.received_from) + " " + msg_to_send
-                            print(compound_msg)
+                            distance_index = xmpp.neighbors.index(user_to_send) + 1
+                            dest_distance = xmpp.neighbors[distance_index]
+                            xmpp.compound_msg = start_of_message + " " + dest_distance + " " + "nodes: " + " ".join(xmpp.received_from) + " " + msg_to_send
+                            print(xmpp.compound_msg)
+                            print("sending to: {}".format(user_to_send))
+                            xmpp.send_message(mto=user_to_send, mbody=xmpp.compound_msg, mtype='chat')
                         else:
                             for i in range(len(xmpp.neighbors)):
                                 if(i % 2 == 0 and xmpp.neighbors[i] not in xmpp.received_from):
-                                    print("sending to: {}".format(xmpp.neighbors))
-                                    xmpp.send_message(mto=xmpp.neighbors[i], mbody=xmpp.compound_msg, mtype='chat')
+                                    start_of_message = str(xmpp.jid) + " " + user_to_send + " " + str(jumps) + " " + msg_to_send
+                                    #distance_index = xmpp.neighbors.index(user_to_send) + 1
+                                    #dest_distance = xmpp.neighbors[distance_index]
+                                    #xmpp.compound_msg = start_of_message + " " + dest_distance + " " + "nodes: " + " ".join(xmpp.received_from) + " " + msg_to_send
+                                    print("sending following message to neighbor: {}".format(start_of_message))
+                                    print("sending to neighbor: {}".format(xmpp.neighbors[i]))
+                                    xmpp.send_message(mto=xmpp.neighbors[i], mbody=start_of_message, mtype='chat')
                             
                             
                                 #print("who is the message for?")
@@ -210,10 +221,12 @@ if __name__ == '__main__':
                                 #print("sending msg")
                                 #xmpp.send_message(mto=user_to_send, mbody = msg_to_send, mtype = 'chat')
                     elif(ch==str(2)):
-                        xmpp.send_message(mto="megaman@alumchat.xyz", mbody="pika pika", mtype='chat')
+                        xmpp.send_message(mto="esam@alumchat.xyz", mbody="pika pika", mtype='chat')
                     elif(ch==str(3)):
-                        print("Link state routing")
-                        call_linkstaterouting()
+                        print("State your neighbors")
+                        neigh = raw_input(">: ")
+                        xmpp.neighbors = neigh.split()
+                        print("neighbors: {}".format(xmpp.neighbors))
                         
                                 
         else:
