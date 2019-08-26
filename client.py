@@ -9,7 +9,7 @@ from sleekxmpp.exceptions import IqError, IqTimeout
 #time for delete user as server attempts to delete before it is created
 import time
 #ssl
-#import ssl
+import ssl
 
 
 jumps = 0
@@ -66,7 +66,8 @@ class ChatBot(sleekxmpp.ClientXMPP):
         if msg['type'] in ('chat', 'normal'):
             print ("%(body)s" % msg)
             #add to received from
-            partir_mensaje = msg.split()
+            
+            partir_mensaje = msg['body'].split()
             usuario_que_envio = partir_mensaje[0]
             xmpp.received_from.append(usuario_que_envio)
             #who is the message for?
@@ -156,8 +157,8 @@ if __name__ == '__main__':
 
         
         #authentication over an unencrypted connection
-        #xmpp['feature_mechanisms'].unencrypted_plain = True
-        #xmpp.ssl_version = ssl.PROTOCOL_TLS
+        xmpp['feature_mechanisms'].unencrypted_plain = True
+        xmpp.ssl_version = ssl.PROTOCOL_TLS
 
         
         if xmpp.connect(('alumchat.xyz', 5222)):
