@@ -74,16 +74,23 @@ class ChatBot(sleekxmpp.ClientXMPP):
             xmpp.received_from.append(usuario_que_envio)
             #who is the message for?
             am_i_final = partir_mensaje[1]
+            try:        
+                jumps = str(int(partir_mensaje[2] )+ 1)
+            except:
+                    print("ignorar primer mensaje :)")
+            #falta agregar distancia al usuario que se le envia
+            dest_distance = partir_mensaje[3]
+            msg_to_send = partir_mensaje[-1]
             if am_i_final == xmpp.jid:
                 print("Flood has finished")
+                
             elif am_i_final in xmpp.neighbors:
                 # obtain index of element
-                #distance_index = xmpp.neighbors.index(user_to_send) + 1
-                #dest_distance = xmpp.neighbors[distance_index]
-                #xmpp.compound_msg = start_of_message + " " + dest_distance + " " + "nodes: " + " ".join(
-                    #xmpp.received_from) + " " + msg_to_send
+                distance_index = xmpp.neighbors.index(am_i_final) + 1
+                dest_distance = dest_distance + xmpp.neighbors[distance_index]
                 #print(xmpp.compound_msg)
-                xmpp.compound_msg = str(xmpp.jid) + " " + am_i_final + " " + partir_mensaje[-1]
+                start_of_message = str(xmpp.jid) + " " + am_i_final + " " + str(jumps)
+                xmpp.compound_msg = start_of_message + " " + dest_distance + " " + "nodes: " + " ".join(xmpp.received_from) + " " + msg_to_send
                 xmpp.send_message(mto=am_i_final, mbody=xmpp.compound_msg, mtype='chat')
             else:
                 for i in range(len(xmpp.neighbors)):
@@ -173,7 +180,7 @@ if __name__ == '__main__':
                 while True:
                     print("press 1 to use Flooding")
                     print("press 2 to use fast message to esam")
-                    print("press 3 to use Link state routing")
+                    print("press 3 to only state your neighbors")
                     ch = raw_input(">: ")
                 #send a message
                     if(ch==str(1)):
@@ -205,13 +212,13 @@ if __name__ == '__main__':
                         else:
                             for i in range(len(xmpp.neighbors)):
                                 if(i % 2 == 0 and xmpp.neighbors[i] not in xmpp.received_from):
-                                    start_of_message = str(xmpp.jid) + " " + user_to_send + " " + str(jumps) + " " + msg_to_send
+                                    start_of_message = str(xmpp.jid) + " " + user_to_send + " " + str(jumps) 
                                     #distance_index = xmpp.neighbors.index(user_to_send) + 1
-                                    #dest_distance = xmpp.neighbors[distance_index]
-                                    #xmpp.compound_msg = start_of_message + " " + dest_distance + " " + "nodes: " + " ".join(xmpp.received_from) + " " + msg_to_send
+                                    dest_distance = xmpp.neighbors[i]
+                                    xmpp.compound_msg = start_of_message + " " + dest_distance + " " + "nodes: " + " ".join(xmpp.received_from) + " " + msg_to_send
                                     print("sending following message to neighbor: {}".format(start_of_message))
                                     print("sending to neighbor: {}".format(xmpp.neighbors[i]))
-                                    xmpp.send_message(mto=xmpp.neighbors[i], mbody=start_of_message, mtype='chat')
+                                    xmpp.send_message(mto=xmpp.neighbors[i], mbody=xmpp.compound_msg, mtype='chat')
                             
                             
                                 #print("who is the message for?")
