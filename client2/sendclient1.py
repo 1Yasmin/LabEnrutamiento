@@ -1,4 +1,5 @@
 import logging
+from copy import deepcopy
 from getpass import getpass
 from argparse import ArgumentParser
 import slixmpp
@@ -7,6 +8,106 @@ from slixmpp.xmlstream.asyncio import asyncio
 import sys 
 import os
 from linkstaterouting import call_linkstaterouting
+
+class SendMessageLinkStateRouting(slixmpp.ClientXMPP):
+    start = 0
+    end = 0
+    #recipiente sera el usuario a quien se lo vamos a enviar y mensaje el mensaje que vamos a enviar.
+    def __init__(self, jid, password, recipient, message):
+        slixmpp.ClientXMPP.__init__(self, jid, password)
+        #mensaje que vamos a enviar y mensaje que vamos a recibir.
+        self.recipient = recipient
+        self.msg = message
+        self.add_event_handler("session_start", self.start)
+        #se carga message para estar recibiendo mensajes
+        #self.add_event_handler("message", self.message)
+        self.add_event_handler("message", self.call_linkstaterouting)
+    #en mtype se define como chat por lo que al levantarse entrara directo al area del chat.
+    def start(self, event):
+        self.send_presence()
+        self.get_roster()
+        self.send_message(mto=self.recipient,
+                          mbody=self.msg,
+                          mtype='chat')
+    #se ingresa funcion de reply para responder mensajes, recordando que este no es asincrono
+    def message(self, msg):
+        if msg['type'] in ('chat', 'normal'):
+            print(msg)
+            print("Mensaje recibido:\n%(body)s" % msg)
+            nuevomensaje = input("envia un mensaje:")
+            msg.reply(nuevomensaje).send()
+            print("Enviaste un nuevo mensaje:", nuevomensaje)
+            if (nuevomensaje == "exit"):
+                self.disconnect()
+                os.system("python menu.py")
+                sys.exit()
+    def Dijkstra(G,start,end=None):
+        D = {}	#distancia final
+        P = {}	# predecedores
+    
+        Q = priorityDictionary()   
+        Q[start] = 0
+        for v in Q:
+            D[v] = Q[v]
+            if v == end: break
+            for w in G[v]:
+                vwLength = D[v] + G[v][w]
+                if w in D:
+                    if vwLength < D[w]:
+                        pass
+                elif w not in Q or vwLength < Q[w]:
+                    Q[w] = vwLength
+                    P[w] = v
+        return (D,P)
+    def shortestPath(G,start,end):
+        D,P = Dijkstra(G,start,end)
+        Path = []
+        while 1:
+            Path.append(end)
+            if end == start: break
+            end = P[end]
+        Path.reverse()
+        return Path
+    #linkstaterouting
+    def call_linkstaterouting(self, msg):
+        graph = {}
+        data = []
+        path = []
+    
+        while True:
+            try:
+                localgraph = deepcopy(graph)
+                G = {}
+                for x in graph:
+                    G[x] = {}
+                    for y in localgraph[x]["data"]:
+                        G[x][y[0]] = float(y[1])
+                        for x in graph:
+                            if x != recipient:
+                                path = shortestPath(G, recipient, x)
+                                self.send_message(mto=self.recipient,mbody=self.msg,mtype='chat')
+                                if msg['type'] in ('chat', 'normal'):
+                                    print(msg)
+                                    print("Mensaje recibido:\n%(body)s" % msg)
+                                    nuevomensaje = input("envia un mensaje:")
+                                    msg.reply(nuevomensaje).send()
+                                    print("Enviaste un nuevo mensaje:", nuevomensaje)
+                                    if (nuevomensaje == "exit"):
+                                        self.disconnect()
+                                        os.system("python menu.py")
+                                        sys.exit()
+                                cost = 0
+                                for x in range(0, len(path)-1):
+                                    cost += G[path[x]][path[x+1]]
+                                    print(path[x], end="")
+                                    print(path[len(path)-1],end="")
+                                    print("%.1f" % cost)
+            except Exception as e:
+                print(e)
+                pass
+                
+    
+
 #clase para eliminar usuario
 class EliminarUsuario (slixmpp.ClientXMPP):
     def __init__(self, jid, password):
@@ -348,6 +449,7 @@ if __name__ == '__main__':
     print ("Selecciona 5 si deseas eliminar usuario")
     print ("Selecciona 6 si deseas enviar una notificacion")
     print ("Selecciona 7 si Link State Routing")
+    print ("Selecciona 8 si Link State Routing vs 2")
     opcionMenu = input (" Inserta la Opcion que deseas >>")
     if opcionMenu=="1":
         if args.to is None:
@@ -357,7 +459,15 @@ if __name__ == '__main__':
         xmpp = SendMessage(args.jid, args.password, args.to, args.message)
         xmpp.connect()
         xmpp.process()
-        
+    elif opcionMenu=="8":
+        if args.to is None:
+            args.to = input("Send To: ")
+        if args.message is None:
+            args.message = input("Message: ")
+        xmpp = SendMessageLinkStateRouting(args.jid, args.password, args.to, args.message)
+        xmpp.connect()
+        xmpp.process()
+
     elif opcionMenu=="2":
         print("Te has desconectado")
         LogOut(args.jid, args.password)
