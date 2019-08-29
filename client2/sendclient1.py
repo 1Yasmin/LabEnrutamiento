@@ -13,20 +13,27 @@ class SendMessageLinkStateRouting(slixmpp.ClientXMPP):
     start = 0
     end = 0
     #recipiente sera el usuario a quien se lo vamos a enviar y mensaje el mensaje que vamos a enviar.
-    def __init__(self, jid, password, recipient, message):
+    def __init__(self, jid, password, recipient, recipient2, message, start, end):
         slixmpp.ClientXMPP.__init__(self, jid, password)
         #mensaje que vamos a enviar y mensaje que vamos a recibir.
         self.recipient = recipient
+        self.recipient2 = recipient2
         self.msg = message
         self.add_event_handler("session_start", self.start)
+        self.start = start
+        self.end = end
         #se carga message para estar recibiendo mensajes
         #self.add_event_handler("message", self.message)
         self.add_event_handler("message", self.call_linkstaterouting)
+
     #en mtype se define como chat por lo que al levantarse entrara directo al area del chat.
     def start(self, event):
         self.send_presence()
         self.get_roster()
         self.send_message(mto=self.recipient,
+                          mbody=self.msg,
+                          mtype='chat')
+        self.send_message(mto=self.recipient2,
                           mbody=self.msg,
                           mtype='chat')
     #se ingresa funcion de reply para responder mensajes, recordando que este no es asincrono
@@ -460,11 +467,15 @@ if __name__ == '__main__':
         xmpp.connect()
         xmpp.process()
     elif opcionMenu=="8":
+        usuario1 = input("Ingresa el primer usuario:  ")
+        usuario2 = input("Ingresa el segundo usuario:  ")
         if args.to is None:
-            args.to = input("Send To: ")
+            args.to = input("Ingresa el usuario que deseas enviar mensaje: ")
+        start = input("Ingresa el inicio: ")
+        end = input("Ingresa el final: ")
         if args.message is None:
             args.message = input("Message: ")
-        xmpp = SendMessageLinkStateRouting(args.jid, args.password, args.to, args.message)
+        xmpp = SendMessageLinkStateRouting(args.jid, args.password, usuario1, usuario2, args.message, start, end)
         xmpp.connect()
         xmpp.process()
 
