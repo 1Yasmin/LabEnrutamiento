@@ -8,16 +8,21 @@ from slixmpp.xmlstream.asyncio import asyncio
 import sys 
 import os
 from linkstaterouting import call_linkstaterouting
+from collections import defaultdict
+from heapq import *
 
 class SendMessageLinkStateRouting(slixmpp.ClientXMPP):
     start = 0
     end = 0
     #recipiente sera el usuario a quien se lo vamos a enviar y mensaje el mensaje que vamos a enviar.
-    def __init__(self, jid, password, recipient, recipient2, message, start, end):
+    def __init__(self, jid, password, recipient, recipient2, recipient3, recipient4, recipient5, message, start, end):
         slixmpp.ClientXMPP.__init__(self, jid, password)
         #mensaje que vamos a enviar y mensaje que vamos a recibir.
         self.recipient = recipient
         self.recipient2 = recipient2
+        self.recipient3 = recipient3
+        self.recipient4 = recipient4
+        self.recipient5 = recipient5
         self.msg = message
         self.add_event_handler("session_start", self.start)
         self.start = start
@@ -34,6 +39,15 @@ class SendMessageLinkStateRouting(slixmpp.ClientXMPP):
                           mbody=self.msg,
                           mtype='chat')
         self.send_message(mto=self.recipient2,
+                          mbody=self.msg,
+                          mtype='chat')
+        self.send_message(mto=self.recipient3,
+                          mbody=self.msg,
+                          mtype='chat')
+        self.send_message(mto=self.recipient4,
+                          mbody=self.msg,
+                          mtype='chat')
+        self.send_message(mto=self.recipient5,
                           mbody=self.msg,
                           mtype='chat')
     #se ingresa funcion de reply para responder mensajes, recordando que este no es asincrono
@@ -467,15 +481,50 @@ if __name__ == '__main__':
         xmpp.connect()
         xmpp.process()
     elif opcionMenu=="8":
-        usuario1 = input("Ingresa el primer usuario:  ")
-        usuario2 = input("Ingresa el segundo usuario:  ")
+        usuario1 = input("Ingresa el vecino:  ")
+        start = input("Ingresa la distancia: ")
+        usuario2 = input("Ingresa el  vecino:  ")
+        end = input("Ingresa la distancia: ")
+        usuario3 = input("Ingresa el vecino :  ")
+        start1 = input("Ingresa la distancia: ")
+        usuario4 = input("Ingresa el vecino :  ")
+        start2 = input("Ingresa la distancia: ")
+        usuario5 = input("Ingresa el vecino :  ")
+        start3 = input("Ingresa la distancia: ")
+        edges = [
+        (str(args.jid), str(usuario1), 1),
+        (str(usuario1), str(usuario2), int(start)),
+        (str(usuario1), str(usuario2), int(end)),
+        (str(usuario2), str(usuario3), int(start1)),
+        (str(usuario3), str(usuario4), int(start2)),
+        (str(usuario4), str(usuario5), int(start3)),
+        ]
+        print("vecinos", edges)
+        def dijkstra(edges, f, t):
+            g = defaultdict(list)
+            for l,r,c in edges:
+                g[l].append((c,r))
+            q, seen, mins = [(0,f,())], set(), {f: 0}
+            while q:
+                (cost,v1,path) = heappop(q)
+                if v1 not in seen:
+                    seen.add(v1)
+                    path = (v1, path)
+                    if v1 == t: return (cost, path)
+                    for c, v2 in g.get(v1, ()):
+                        if v2 in seen: continue
+                        prev = mins.get(v2, None)
+                        next = cost + c
+                        if prev is None or next < prev:
+                            mins[v2] = next
+                            heappush(q, (next, v2, path))
+            return float("inf")
         if args.to is None:
             args.to = input("Ingresa el usuario que deseas enviar mensaje: ")
-        start = input("Ingresa el inicio: ")
-        end = input("Ingresa el final: ")
+            print (dijkstra(edges,str(args.jid) ,str(args.to)))
         if args.message is None:
             args.message = input("Message: ")
-        xmpp = SendMessageLinkStateRouting(args.jid, args.password, usuario1, usuario2, args.message, start, end)
+        xmpp = SendMessageLinkStateRouting(args.jid, args.password, usuario1, usuario2, usuario3, usuario4, usuario5,args.message, start, end)
         xmpp.connect()
         xmpp.process()
 
@@ -517,7 +566,7 @@ if __name__ == '__main__':
     elif opcionMenu=="7":
         print("Link state routing")
         print("write your neighbors and distance separated by a space")
-        print("example: node@alumchat.xyz 10 quack@alumchat.xyz 8")
+        print("example: node@alumchat.xyz")
         neigh = input("my neighbors are: ")
         try:
             neighbors = neigh.split()
